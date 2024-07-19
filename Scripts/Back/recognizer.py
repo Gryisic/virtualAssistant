@@ -1,20 +1,47 @@
+import time
 import speech_recognition
+
+from Scripts.Back.Logs import recognition_logs
 from Scripts.Back.Commands import commands
-
 from Scripts.Back.Commands.Objects.Speaker.speaker import speak
+from Scripts.Utils.events_handler import register_handler
 
-recognizer = speech_recognition.Recognizer()
 
-def listen():
-    speak("Я слушаю!")
+class Recognizer:
+    logs = recognition_logs.RecognitionLogs()
+    recognizer = speech_recognition.Recognizer()
+    is_active = False
+    stop = None
 
-    try:
-        with speech_recognition.Microphone(device_index=4) as microphone:
-            recognizer.adjust_for_ambient_noise(source=microphone, duration=0.5)
-            audio = recognizer.listen(microphone)
-            query = recognizer.recognize_google(audio_data=audio, language='ru-RU').lower()
+    def __init__(self):
+        register_handler('stop_recognition', self.stop_listening)
 
-            commands.process(query)
+    def listen(self):
+        speak("Я слушаю!")
 
-    except speech_recognition.UnknownValueError:
-        speak('Я не поняла!')
+        def callback(recognizer, audio):
+            try:
+                query = recognizer.recognize_google(audio, language='ru-RU').lower()
+                self.logs.add(query)
+                commands.process(query)
+            except speech_recognition.UnknownValueError:
+                speak('Я не поняла!')
+
+        microphone = speech_recognition.Microphone(device_index=4)
+        with microphone as source:
+            self.recognizer.adjust_for_ambient_noise(source)
+
+        self.stop = self.recognizer.listen_in_background(microphone, callback)
+
+        while self.is_active:
+            time.sleep(0.1)
+
+        speak('Я спать!')
+
+    def start_listening(self):
+        self.is_active = True
+        self.listen()
+
+    def stop_listening(self):
+        self.is_active = False
+        self.stop(wait_for_stop=False)

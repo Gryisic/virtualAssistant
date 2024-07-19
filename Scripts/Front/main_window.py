@@ -1,37 +1,45 @@
-from customtkinter import CTk, CTkTabview, CTkSwitch
 import tempfile
+import threading
+from Scripts.Front.Tabs import control_tab
+
+from customtkinter import CTk, CTkTabview, CTkSwitch
 
 icon = (b'\x00\x00\x01\x00\x01\x00\x10\x10\x00\x00\x01\x00\x08\x00h\x05\x00\x00'
         b'\x16\x00\x00\x00(\x00\x00\x00\x10\x00\x00\x00 \x00\x00\x00\x01\x00'
         b'\x08\x00\x00\x00\x00\x00@\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        b'\x00\x01\x00\x00\x00\x01') + b'\x00'*1282 + b'\xff'*64
+        b'\x00\x01\x00\x00\x00\x01') + b'\x00' * 1282 + b'\xff' * 64
 
 _, icon_path = tempfile.mkstemp()
 
-class MainWindow:
-    recognizer = None
 
-    def set_recognizer(self, recognizer):
+class MainWindow:
+    root = None
+    listbox = None
+    recognizer = None
+    showing = False
+
+    def __init__(self, recognizer):
         self.recognizer = recognizer
+
+    def on_closing(self):
+        self.showing = False
+        self.root.quit()
+        self.root.destroy()
 
     def create(self):
         with open(icon_path, 'wb') as icon_file:
             icon_file.write(icon)
 
-        root = CTk()
-        root.title('')
-        root.iconbitmap(default=icon_path)
+        self.root = CTk()
+        self.root.title('')
+        self.root.iconbitmap(default=icon_path)
 
-        tab_view = CTkTabview(master=root, height=150)
-        tab_view.pack(fill='x', side='bottom')
-        tab_view.add('General')
-        tab_view.add('Logs')
+        kwargs = {
+            'root': self.root,
+            'recognizer': self.recognizer
+        }
+        tab_view = control_tab.ControlTab(**kwargs)
 
-        def switch_event():
-            self.recognizer.listen()
-
-        switch = CTkSwitch(master=tab_view.tab('General'), text='Enable recognition', onvalue='On', offvalue="Off", command=switch_event)
-        switch.place(relx=0.5, rely=0.5, anchor='center')
-
-        root.geometry('300x250')
-        root.mainloop()
+        self.root.geometry('300x250')
+        self.root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing())
+        self.root.mainloop()

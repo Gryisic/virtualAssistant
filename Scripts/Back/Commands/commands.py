@@ -8,11 +8,14 @@ commands_dict = {
     'command': {
         'greeting': ['привет', 'бот', 'хай', 'приветик'],
         'launch': ['открой', 'запусти'],
-        'time': ['время', 'сколько времени', 'назови время']
+        'time': ['время', 'сколько времени', 'назови время'],
+        'weather': ['погода', 'назови погоду', 'что на улице'],
+        'sleep': ['не подслушивай', 'боту пора спать', 'хватит слушать']
     }
 }
 
 builder = commands_builder.CommandsBuilder()
+
 
 def process(command: str):
     commands = get_commands_list(command)

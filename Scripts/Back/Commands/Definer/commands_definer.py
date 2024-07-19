@@ -5,13 +5,16 @@ import Scripts.Back.Commands.Definer.Utils.utils as utils
 commands_dict = {
     'greeting': command_objects.GreetingCommand(),
     'launch': command_objects.LaunchCommand(),
-    'time': command_objects.TimeCommand()
+    'time': command_objects.TimeCommand(),
+    'weather': command_objects.WeatherCommand(),
+    'sleep': command_objects.SleepCommand()
 }
 
 paths_dict = {
     'games': ['игра', 'игру', 'запустить игру'],
     'progs': ['прога', 'прогу', 'запустить прогу', 'запусти'],
 }
+
 
 def get_command_object(key: str, command: str):
     object = commands_dict[key]
