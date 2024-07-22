@@ -1,12 +1,10 @@
 import customtkinter
 import threading
 
-from CTkListbox import CTkListbox
-from tkinter import constants
-
 from customtkinter import CTkSwitch
-
-from Scripts.Utils.events_handler import register_handler
+from Scripts.Front.Tabs.Controllable.logs_frame import LogsFrame
+from Scripts.Front.Tabs.Controllable.to_do_frame import ToDoFrame
+from Scripts.Utils.events_handler import register_handler, dispatch_event
 
 
 class ControlTab(customtkinter.CTkTabview):
@@ -17,20 +15,27 @@ class ControlTab(customtkinter.CTkTabview):
         self.pack(fill='x', side='bottom')
         self.add('General')
         self.add('Logs')
+        self.add('To-Do')
 
         self.recognizer = kwargs['recognizer']
-        self.listbox = CTkListbox(master=self.tab('Logs'))
-        self.listbox.pack(fill='x')
+        self.logs_frame = LogsFrame(master=self.tab('Logs'))
+        self.logs_frame.pack(fill='x')
+
+        self.to_do_frame = ToDoFrame(master=self.tab('To-Do'))
+        self.to_do_frame.pack(fill='x')
 
         switch = CTkSwitch(master=self.tab('General'), text='Enable recognition', onvalue='On', offvalue="Off",
                            command=lambda: self.toggle_recognition(switch))
         switch.place(relx=0.5, rely=0.5, anchor='center')
 
-        register_handler('logs_updated', self.fill_logs)
+        register_handler('logs_updated', self.logs_frame.add)
         register_handler('stop_recognition', lambda: switch.toggle())
 
     def tab_changed(self):
         active_tab = self.get()
+
+        if active_tab == 'To-Do' and self.to_do_frame.items_count() <= 0:
+            dispatch_event('to_do_list_requested')
 
     def toggle_recognition(self, switch):
         if switch.get() == 'On':
@@ -38,10 +43,3 @@ class ControlTab(customtkinter.CTkTabview):
             thread.start()
         else:
             self.recognizer.stop_listening()
-
-    def fill_logs(self, logs):
-        self.listbox.delete(0, constants.END)
-        for i in range(len(logs) - 1, -1, -1):
-            log = logs[i]
-            self.listbox.insert(constants.END, log)
-

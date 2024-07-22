@@ -1,4 +1,4 @@
-from Scripts.Back.Commands.Parsers.commands_parser import get_commands_list
+from Scripts.Back.Commands.Objects.Parsers.commands_parser import get_commands_list
 from Scripts.Back.Commands.Builders import commands_builder
 from Scripts.Back.Commands.Definer import commands_definer
 
@@ -10,7 +10,9 @@ commands_dict = {
         'launch': ['открой', 'запусти'],
         'time': ['время', 'сколько времени', 'назови время'],
         'weather': ['погода', 'назови погоду', 'что на улице'],
-        'sleep': ['не подслушивай', 'боту пора спать', 'хватит слушать']
+        'sleep': ['не подслушивай', 'боту пора спать', 'хватит слушать'],
+        'journal': ['запиши в журнал', 'добавь заметку', 'заметка', 'добавь в журнал', 'запись', 'новая запись'],
+        'shutdown': ['выключи компьютер', 'выключи комп']
     }
 }
 

@@ -1,18 +1,22 @@
+from Scripts.Back.Commands.Objects.Journal.journal import Journal
+from Scripts.Back.Commands.Objects.Parsers.commands_parser import get_journal_command
 from Scripts.Back.Commands.Objects.Speaker.speaker import speak
 from _datetime import datetime
+from Scripts.Utils.events_handler import dispatch_event
+from ctypes import windll, byref, Structure, WinError, POINTER, WINFUNCTYPE
+from ctypes.wintypes import BOOL, HMONITOR, HDC, RECT, LPARAM, DWORD, BYTE, WCHAR, HANDLE
 
 import abc
 import random
 import os
 import requests
 import pymorphy3
-
-from Scripts.Utils.events_handler import dispatch_event
+import ctypes
 
 
 class Command(abc.ABC):
-    requiresPath = False
-    requiresApp = False
+    requires_path = False
+    requires_command = False
 
     @abc.abstractmethod
     def execute(self):
@@ -44,11 +48,11 @@ class LaunchCommand(Command):
     path = str
 
     def __init__(self):
-        self.requiresPath = True
-        self.requiresApp = True
+        self.requires_path = True
+        self.requires_command = True
 
-    def set_app(self, app: str):
-        self.app = app
+    def set_command(self, command: str):
+        self.app = command
 
     def set_path(self, path: str):
         self.path = self.paths_dict[path]
@@ -92,18 +96,24 @@ class WeatherCommand(Command):
 
             res = res.json()
 
+            city = self.morph.parse(self.city)[0].inflect({'datv'}).word
             gradus = self.morph.parse('градус')[0]
             weather = res['weather'][0]['description']
             temp = round(res['main']['temp'])
             min_temp = round(res['main']['temp_min'])
             max_temp = round(res['main']['temp_max'])
             temp_gradus = gradus.make_agree_with_number(temp).word
-            min_temp_gradus = gradus.make_agree_with_number(min_temp).word
-            max_temp_gradus = gradus.make_agree_with_number(max_temp).word
-            city = self.morph.parse(self.city)[0].inflect({'datv'}).word
 
-            speak(
-                f'На улице в {city} {weather}. Температура: {temp} {temp_gradus}. Меняется от {min_temp} {min_temp_gradus} до {max_temp} {max_temp_gradus}.')
+            phrase = f'На улице в {city} {weather}. Температура: {temp} {temp_gradus}'
+
+            if min_temp == max_temp:
+                phrase = f'{phrase} и не изменится.'
+            else:
+                min_temp_gradus = gradus.make_agree_with_number(min_temp).word
+                max_temp_gradus = gradus.make_agree_with_number(max_temp).word
+                phrase = f'{phrase}. Меняется от {min_temp} {min_temp_gradus} до {max_temp} {max_temp_gradus}.'
+
+            speak(phrase)
 
         except requests.exceptions.ReadTimeout:
             speak('Не получилось узнать погоду')
@@ -111,6 +121,63 @@ class WeatherCommand(Command):
             speak('Не получилось достучаться до погодных богов')
 
 
+class JournalCommand(Command):
+    def __init__(self):
+        self.requires_command = True
+        self.journal = Journal()
+        self.command = str
+
+    def set_command(self, command: str):
+        self.command = command
+
+    def execute(self):
+        command = get_journal_command(self.command)
+
+        self.journal.add(**command)
+
+
 class SleepCommand(Command):
     def execute(self):
         dispatch_event('stop_recognition')
+
+
+class ShutDownCommand(Command):
+    _MONITORENUMPROC = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
+
+    class _PHYSICAL_MONITOR(Structure):
+        _fields_ = [
+            ('handle', HANDLE),
+            ('description', WCHAR * 128)
+        ]
+
+    def execute(self):
+        def iterate_physical_monitors(close_handles=True):
+            def callback(hmonitor, hdc, lprect, lparam):
+                monitors.append(HMONITOR(hmonitor))
+                return True
+
+            monitors = []
+            if not windll.user32.EnumDisplayMonitors(None, None, self._MONITORENUMPROC(callback), None):
+                raise WinError('EnumDisplayMonitors failed')
+
+            for monitor in monitors:
+                count = DWORD()
+                if not windll.dxva2.GetNumberOfPhysicalMonitorsFromHMONITOR(monitor, byref(count)):
+                    raise WinError()
+                physical_array = (self._PHYSICAL_MONITOR * count.value)()
+                if not windll.dxva2.GetPhysicalMonitorsFromHMONITOR(monitor, count.value, physical_array):
+                    raise WinError()
+                for physical in physical_array:
+                    yield physical.handle
+                    if close_handles:
+                        if not windll.dxva2.DestroyPhysicalMonitor(physical.handle):
+                            raise WinError()
+
+        def set_vcp_feature(monitor, code, value):
+            if not windll.dxva2.SetVCPFeature(HANDLE(monitor), BYTE(code), DWORD(value)):
+                raise WinError()
+
+        for handle in iterate_physical_monitors():
+            set_vcp_feature(handle, 0xd6, 0x04)
+
+        windll.powrprof.SetSuspendState(False, True, False)

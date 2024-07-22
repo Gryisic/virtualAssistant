@@ -25,7 +25,7 @@ class Recognizer:
                 self.logs.add(query)
                 commands.process(query)
             except speech_recognition.UnknownValueError:
-                speak('Я не поняла!')
+                pass
 
         microphone = speech_recognition.Microphone(device_index=4)
         with microphone as source:
