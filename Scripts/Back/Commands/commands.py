@@ -12,7 +12,8 @@ commands_dict = {
         'weather': ['погода', 'назови погоду', 'что на улице'],
         'sleep': ['не подслушивай', 'боту пора спать', 'хватит слушать'],
         'journal': ['запиши в журнал', 'добавь заметку', 'заметка', 'добавь в журнал', 'запись', 'новая запись'],
-        'shutdown': ['выключи компьютер', 'выключи комп']
+        'shutdown': ['выключи компьютер', 'выключи комп'],
+        'minimize': ['сверни яндекс']
     }
 }
 
@@ -27,6 +28,7 @@ def process(command: str):
         for k, v in commands_dict['command'].items():
             if utils.is_strings_similar(v, split_command, 0.8) or utils.is_string_in_list(v, split_command):
                 builder.append(commands_definer.get_command_object(k, split_command))
+                break
 
     for com in builder.build():
         com.execute()

@@ -25,3 +25,14 @@ def get_journal_command(full_command: str):
     }
 
     return command
+
+
+def get_minimize_command(full_command: str):
+    separators = " сверни | минимизируй |сверни "
+    split_command = split(separators, full_command)
+    text = ''
+
+    for i in range(1, len(split_command)):
+        text = f'{text} {split_command[i]}'
+
+    return text.strip(" ")

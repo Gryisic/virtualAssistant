@@ -51,15 +51,15 @@ class MainWindow:
         return final_file_path
 
     def on_closing(self):
-        #self.root.quit()
-        #self.root.destroy()
-        self.root.withdraw()
-        ctypes.windll['uxtheme.dll'][135](1)
-        path = self.validate_path('LocalData\\images', 'va_icon.png')
-        image = Image.open(path)
-        menu = (MenuItem('Show', self.show_window, default=True), MenuItem('Quit', self.quit_window))
-        local_icon = pystray.Icon('Icon', image, 'Assistant', menu)
-        local_icon.run()
+        self.root.quit()
+        self.root.destroy()
+        # self.root.withdraw()
+        # ctypes.windll['uxtheme.dll'][135](1)
+        # path = self.validate_path('LocalData\\images', 'va_icon.png')
+        # image = Image.open(path)
+        # menu = (MenuItem('Show', self.show_window, default=True), MenuItem('Quit', self.quit_window))
+        # local_icon = pystray.Icon('Icon', image, 'Assistant', menu)
+        # local_icon.run()
 
     def create(self):
         with open(icon_path, 'wb') as icon_file:

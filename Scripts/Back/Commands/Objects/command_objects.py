@@ -1,5 +1,6 @@
 from Scripts.Back.Commands.Objects.Journal.journal import Journal
-from Scripts.Back.Commands.Objects.Parsers.commands_parser import get_journal_command
+from Scripts.Back.Commands.Objects.Parsers.commands_parser import get_journal_command, get_minimize_command
+from Scripts.Back.Commands.Objects.Processors.windows_processor import min_max
 from Scripts.Back.Commands.Objects.Speaker.speaker import speak
 from _datetime import datetime
 from Scripts.Utils.events_handler import dispatch_event
@@ -11,7 +12,6 @@ import random
 import os
 import requests
 import pymorphy3
-import ctypes
 
 
 class Command(abc.ABC):
@@ -181,3 +181,17 @@ class ShutDownCommand(Command):
             set_vcp_feature(handle, 0xd6, 0x04)
 
         windll.powrprof.SetSuspendState(False, True, False)
+
+
+class MinimizeCommand(Command):
+    def __init__(self):
+        self.requires_command = True
+        self.command = ''
+
+    def set_command(self, command: str):
+        self.command = command
+
+    def execute(self):
+        app = get_minimize_command(self.command)
+
+        min_max(True, app)

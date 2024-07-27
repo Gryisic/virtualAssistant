@@ -9,7 +9,8 @@ commands_dict = {
     'weather': command_objects.WeatherCommand(),
     'sleep': command_objects.SleepCommand(),
     'journal': command_objects.JournalCommand(),
-    'shutdown': command_objects.ShutDownCommand()
+    'shutdown': command_objects.ShutDownCommand(),
+    'minimize': command_objects.MinimizeCommand()
 }
 
 paths_dict = {
